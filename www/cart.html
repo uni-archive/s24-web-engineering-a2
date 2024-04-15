@@ -22,28 +22,27 @@
   <main>
 
     <section id="cart" class="cart">
-      <div id="cart-total" class="cart-total">Total: <span id="price-total">0</span></div>
+      <div id="cart-total" class="cart-total">Total: € <span id="price-total">0</span></div>
       <button type="button" id="cart-checkout" class="cart-checkout" onclick="window.location.href='checkout.html';">Checkout</button>
     </section>
+    <p id="cart-empty-text">There are no items in your shopping cart.</p>
   </main>
 
   <script type="module">
     import * as Frame from './frame.js';
 
-    /** 
+    let totalPrice = 0;
+
+    /**
      * Adds the given cart item to the DOM.
-     * 
+     *
      * TODO: finalize this function
      *
      * @param cartItem A cart item from local storage.
     */
-    async function createCartItem(cartItem) {
+    window.createCartItem = async function createCartItem(cartItem) {
       // TODO: set the right values
-      const printSize = undefined;
-      const frameStyle = undefined;
-      const frameWidth = undefined;
-      const matColor = undefined;
-      const matWidth = undefined;
+      const { printSize, frameStyle, frameWidth, matWidth, matColor, objectID } = cartItem;
 
       const itemDiv = document.createElement("div");
       itemDiv.classList.add("cart-item");
@@ -59,31 +58,73 @@
 
       // TODO: complete link URL
       const framingLink = document.createElement("a");
-      framingLink.href = `undefined`;
+      const framingUrl = new URL(window.location.origin + "/framing.html");
+      framingUrl.searchParams.set("objectID", objectID);
+      framingUrl.searchParams.set("printSize", printSize);
+      framingUrl.searchParams.set("frameStyle", frameStyle);
+      framingUrl.searchParams.set("frameWidth", frameWidth);
+      framingUrl.searchParams.set("matWidth", matWidth);
+      framingUrl.searchParams.set("matColor", matColor);
+      framingLink.href = framingUrl.href.substr(framingUrl.origin.length + 1);
       framingLink.appendChild(previewImg);
 
       previewDiv.appendChild(framingLink);
       itemDiv.appendChild(previewDiv);
 
+      const item_metadata = await met_get_info(objectID);
+      const price = Frame.calculatePrice(printSize, frameStyle, frameWidth, matWidth);
+      totalPrice += price;
+
       // TODO: complete item description
-      const labelDiv = document.createElement("div")
+      const labelDiv = document.createElement("div");
+      itemDiv.id = "i" + objectID;
       labelDiv.classList.add("museum-label");
       labelDiv.innerHTML = `
           <div>
-            <span class="artist"></span>
-            <span class="title"></span>,
-            <span class="date"></span>
+            <span class="artist">${item_metadata.artistDisplayName}</span>
+            <span class="title">${item_metadata.title}</span>,
+            <span class="date">${item_metadata.objectDate}</span>
             <br><br>
-            <span class="frame-description"></span>
+            <span class="frame-description">${{M: "Medium", L: "Large", S: "Small"}[printSize]} print in a ${frameWidth / 10} cm ${frameStyle} frame with a ${matWidth / 10} cm ${matColor} mat.</span>
           </div>
-          <div class="price">€ </div>
-          <button class="cart-remove" aria-label="Remove"></button>`;
+          <div class="price">€ ${(price / 100).toFixed(2)}</div>
+          <button class="cart-remove" aria-label="Remove" onclick="removeItem(${objectID})"></button>`;
 
+      previewImg.src = item_metadata.primaryImageSmall;
       itemDiv.appendChild(labelDiv);
-      
-      // TODO: add itemDiv to DOM
+      document.querySelector(".cart").prepend(itemDiv);
     }
+
+    window.updatePrice = function updatePrice() {
+      document.getElementById("price-total").innerText = (totalPrice / 100).toFixed(2);
+    }
+
+    window.removeItem = function removeItem(objectId) {
+      const items = get_cart_items();
+      const item_to_remove = items.filter(i => i.objectID == objectId)[0];
+      const { printSize, frameStyle, frameWidth, matWidth, matColor } = item_to_remove;
+      totalPrice -= Frame.calculatePrice(printSize, frameStyle, frameWidth, matWidth);
+      updatePrice();
+      set_cart_items(items.filter(i => i.objectID != objectId));
+      document.getElementById("i" + objectId).remove();
+      update_cart_text();
+    };
+
+    (async () => {
+      const items = get_cart_items();
+      if (items.length === 0) {
+        document.getElementById("cart-empty-text").style.display = null;
+        document.getElementById("cart").style.display = "none";
+      } else {
+        document.getElementById("cart-empty-text").style.display = "none";
+        document.getElementById("cart").style.display = null;
+        await Promise.all(items.map(i => createCartItem(i)))
+        updatePrice();
+      }
+    })()
   </script>
+  <script src="met_api.js"></script>
+  <script src="cart.js"></script>
 </body>
 
 </html>

@@ -24,7 +24,11 @@
 
     <div id="preview-container" class="framing-preview">
       <img id="preview-image" src="null" alt="">
-      <div id="image-label" class="museum-label"></div>
+      <div id="image-label" class="museum-label">
+        <span class="artist"></span>
+        <span class="title"></span>,
+        <span class="date"></span>
+      </div>
     </div>
 
     <form id="framing-form" class="framing-form museum-label">
@@ -36,11 +40,11 @@
       <fieldset>
         <legend>Print Size</legend>
         <div class="segmented">
-          <input type="radio" name="printSize" id="print-size-s" value="S">
+          <input type="radio" name="printSize" id="print-size-s" value="S" onchange="render()">
           <label for="print-size-s" id="print-size-s-label">Small<br>0 × 0 cm</label>
-          <input type="radio" name="printSize" id="print-size-m" value="M" checked>
+          <input type="radio" name="printSize" id="print-size-m" value="M" checked onchange="render()">
           <label for="print-size-m" id="print-size-m-label">Medium<br>0 × 0 cm</label>
-          <input type="radio" name="printSize" id="print-size-l" value="L">
+          <input type="radio" name="printSize" id="print-size-l" value="L" onchange="render()">
           <label for="print-size-l" id="print-size-l-label">Large<br>0 × 0 cm</label>
         </div>
       </fieldset>
@@ -61,19 +65,19 @@
         <legend>Frame Style</legend>
         <div class="frame-style-row">
           <div class="frame-style-item">
-            <input type="radio" id="frame-style-classic" name="frameStyle" value="classic" checked>
+            <input type="radio" id="frame-style-classic" name="frameStyle" value="classic" checked onchange="render()">
             <label for="frame-style-classic"><img src="frame-styles/classic-thumb.png" alt="Classic">Classic</label>
           </div>
           <div class="frame-style-item">
-            <input type="radio" id="frame-style-natural" name="frameStyle" value="natural">
+            <input type="radio" id="frame-style-natural" name="frameStyle" value="natural" onchange="render()">
             <label for="frame-style-natural"><img src="frame-styles/natural-thumb.png" alt="Natural">Natural</label>
           </div>
           <div class="frame-style-item">
-            <input type="radio" id="frame-style-shabby" name="frameStyle" value="shabby">
+            <input type="radio" id="frame-style-shabby" name="frameStyle" value="shabby" onchange="render()">
             <label for="frame-style-shabby"><img src="frame-styles/shabby-thumb.png" alt="Shabby">Shabby</label>
           </div>
           <div class="frame-style-item">
-            <input type="radio" id="frame-style-elegant" name="frameStyle" value="elegant">
+            <input type="radio" id="frame-style-elegant" name="frameStyle" value="elegant" onchange="render()">
             <label for="frame-style-elegant"><img src="frame-styles/elegant-thumb.png" alt="Elegant">Elegant</label>
           </div>
         </div>
@@ -84,34 +88,34 @@
         <div class="framing-form-row">
           <label>Mat</label>
           <div>
-            <input type="number" name="matWidth" min="0" max="10" value="3" step="0.1" aria-label="Mat Width">
+            <input type="number" name="matWidth" min="0" max="10" value="3" step="0.1" aria-label="Mat Width" onchange="updateMatWidth(this.value);">
             cm
           </div>
         </div>
-        <input type="range" name="matWidthR" min="0" max="10" value="3" step="0.1" aria-hidden="true">
+        <input type="range" name="matWidthR" min="0" max="10" value="3" step="0.1" aria-hidden="true" oninput="updateMatWidth(this.value);">
       </fieldset>
 
       <fieldset>
         <legend>Mat Color</legend>
         <div class="mat-color-row">
           <div class="mat-color-item">
-            <input type="radio" id="mat-color-mint" name="matColor" value="mint">
+            <input type="radio" id="mat-color-mint" name="matColor" value="mint" onchange="render()">
             <label for="mat-color-mint">Mint</label>
           </div>
           <div class="mat-color-item">
-            <input type="radio" id="mat-color-periwinkle" name="matColor" value="periwinkle">
+            <input type="radio" id="mat-color-periwinkle" name="matColor" value="periwinkle" onchange="render()">
             <label for="mat-color-periwinkle">Periwinkle</label>
           </div>
           <div class="mat-color-item">
-            <input type="radio" id="mat-color-cerulean" name="matColor" value="cerulean" checked>
+            <input type="radio" id="mat-color-cerulean" name="matColor" value="cerulean" checked onchange="render()">
             <label for="mat-color-cerulean">Cerulean</label>
           </div>
           <div class="mat-color-item">
-            <input type="radio" id="mat-color-burgundy" name="matColor" value="burgundy">
+            <input type="radio" id="mat-color-burgundy" name="matColor" value="burgundy" onchange="render()">
             <label for="mat-color-burgundy">Burgundy</label>
           </div>
           <div class="mat-color-item">
-            <input type="radio" id="mat-color-coal" name="matColor" value="coal">
+            <input type="radio" id="mat-color-coal" name="matColor" value="coal" onchange="render()">
             <label for="mat-color-coal">Coal</label>
           </div>
         </div>
@@ -145,21 +149,46 @@
       render();
     }
 
+    window.addToCart = function addToCart() {
+      const items = get_cart_items();
+      const printSize = document.querySelector('input[name="printSize"]:checked').value;
+      const frameStyle = document.querySelector('input[name="frameStyle"]:checked').value;
+      const frameWidth = Number(document.querySelector('input[name="frameWidth"]').value) * 10;
+      const matColor = document.querySelector('input[name="matColor"]:checked').value;
+      const matWidth = Number(document.querySelector('input[name="matWidth"]').value) * 10;
+      items.push({
+        objectID: (new URL(window.location.href)).searchParams.get("objectID"),
+        printSize,
+        frameWidth,
+        frameStyle,
+        matColor,
+        matWidth
+      });
+      set_cart_items(items);
+    }
+
+    window.updateMatWidth = function updateMatWidth(w) {
+      const form = document.getElementById("framing-form");
+      var w = Math.round(clamp(w, 0, 10) * 10) / 10;
+      form.matWidth.value = w;
+      form.matWidthR.value = w;
+      render();
+    }
+
     function clamp(x, min, max) {
       return Math.min(Math.max(x, min), max);
     }
 
     window.render = function () {
       // render picture frame
-      // TODO: set the correct values
       const previewContainer = document.getElementById("preview-container");
       const previewImg = document.getElementById("preview-image");
       const label = document.getElementById("image-label");
-      const printSize = undefined;
-      const frameStyle = undefined;
-      const frameWidth = undefined;
-      const matColor = undefined;
-      const matWidth = undefined;
+      const printSize = document.querySelector('input[name="printSize"]:checked').value;
+      const frameStyle = document.querySelector('input[name="frameStyle"]:checked').value;
+      const frameWidth = Number(document.querySelector('input[name="frameWidth"]').value);
+      const matColor = document.querySelector('input[name="matColor"]:checked').value;
+      const matWidth = Number(document.querySelector('input[name="matWidth"]').value);
       Frame.render(previewImg, previewContainer, label, printSize, frameStyle, frameWidth, matColor, matWidth);
 
       // update print sizes
@@ -171,11 +200,14 @@
       document.getElementById("print-size-l-label").innerHTML = `Large <br>${printSizes['L'][0] / 10} × ${printSizes['L'][1] / 10} cm`
       document.getElementById('total-size').innerHTML = `${totalWidth / 10} × ${totalHeight / 10} cm`;
 
-      // TODO: update price
+
+      document.getElementById('price').innerHTML = "€ " + (Frame.calculatePrice(printSize, frameStyle, frameWidth * 10, matWidth * 10) / 100).toFixed(2);
     }
 
     window.addEventListener("resize", render);
   </script>
+  <script src="met_api.js" defer></script>
+  <script src="framing.js" defer></script>
 </body>
 
 </html>

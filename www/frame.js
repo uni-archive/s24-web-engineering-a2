@@ -70,6 +70,7 @@ export function getPrintSizes(img) {
 
   img.style.boxSizing = 'border-box';
   img.width = (w + 2 * matWidth + 2 * frameWidth) * x;
+  console.log(w, 2 * matWidth, 2 * frameWidth)
   img.height = (h + 2 * matWidth + 2 * frameWidth) * x;
   img.style.borderImageSource = `url(frame-styles/${frameStyle}.jpg)`;
   img.style.borderImageSlice = frameImageSlices[frameStyle];
@@ -80,14 +81,14 @@ export function getPrintSizes(img) {
 
 /**
  * Returns the price of a given frame configuration in euro cents.
- * 
+ *
  * @param printSize The size of the print, either 'S', 'M' or 'L'.
  * @param frameStyle The type of frame, as a string.
- * @param frameWidth The width of the frame, in millimeters.
- * @param matWidth The width of the mat, in millimeters.
+ * @param frameWidth The width of the frame, in cm.
+ * @param matWidth The width of the mat, in cm.
  */
 export function calculatePrice(printSize, frameStyle, frameWidth, matWidth) {
   const frameCost = { 'classic': 110, 'natural': 85, 'shabby': 100, 'elegant': 90 };
   const sizeMultiplier = { 'S': 1, 'M': 2, 'L': 3 };
-  return (3500 + frameCost[frameStyle] * frameWidth + 5 * matWidth) * sizeMultiplier[printSize];
+  return (3500 + frameCost[frameStyle] * frameWidth * 10 + 5 * matWidth * 10) * sizeMultiplier[printSize];
 }
